@@ -5,7 +5,7 @@ from rest_framework import status
 from django.http import FileResponse, Http404
 
 from .models import SurgeryVideo
-from .serializers import SurgeryVideoSerializer
+from .serializer import SurgeryVideoSerializer
 
 
 # 📌 GET all videos / GET single / POST upload
