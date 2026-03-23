@@ -12,7 +12,7 @@ class Role(models.TextChoices):
 
 
 class Department(models.Model):
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -59,17 +59,20 @@ class User(AbstractBaseUser, PermissionsMixin):
     role = models.CharField(
         max_length=50,
         choices=Role.choices,
-        default=Role.DOCTOR
+        default=Role.DOCTOR,
+        db_index = True
     )
     department = models.ForeignKey(
         Department,
         on_delete=models.SET_NULL,
         null=True,
-        blank=True
+        blank=True,
+        db_index=True
     )
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     objects = UserManager()
 
     USERNAME_FIELD = "email"
@@ -77,3 +80,6 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
+
+    class Meta:
+        indexes = [models.Index(fields=["role", "department"])]

@@ -1,7 +1,22 @@
 from django.db import transaction
 from rest_framework import serializers
-from models import User, Department, Role
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from .models import User, Department, Role
 
+
+class CustomTokenSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        data = super().validate(attrs)
+
+        return {
+            "access": data["access"],
+            "refresh": data["refresh"],
+            "user": {
+                "id": self.user.id,
+                "email": self.user.email,
+                "role": self.user.role
+            }
+        }
 
 class DepartmentSerializer(serializers.ModelSerializer):
     class Meta:
@@ -20,6 +35,8 @@ class UserSerializer(serializers.ModelSerializer):
     def validate_password(self, value):
         if value.isdigit():
             raise serializers.ValidationError("Password cannot be entirely numeric.")
+        if not value.strip():  #catch whitespace-only passwords early
+            raise serializers.ValidationError("Password cannot be blank or whitespace.")
         return value
 
     def validate_role(self, value):
