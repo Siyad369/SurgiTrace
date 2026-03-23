@@ -6,7 +6,10 @@ class RolePermission(BasePermission):
     allowed_roles = []
 
     def has_permission(self, request, view):
-        return request.user and request.user.role in self.allowed_roles
+        return (
+                bool(request.user and request.user.is_authenticated)
+                and request.user.role in self.allowed_roles
+        )
 
 # SURGERY PERMISSIONS
 class SurgeryPermission(BasePermission):
@@ -83,7 +86,7 @@ class UserPermission(BasePermission):
 
         # Hospital admin → manage non-admin users
         if user.role == "hospital_admin":
-            return obj.role != "system_admin"
+            return obj.role not in ["system_admin", "hospital_admin"]
 
         return False
 
