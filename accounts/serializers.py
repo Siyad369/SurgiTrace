@@ -1,3 +1,4 @@
+from django.contrib.auth import authenticate
 from django.db import transaction
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -5,6 +6,8 @@ from .models import User, Department, Role
 
 
 class CustomTokenSerializer(TokenObtainPairSerializer):
+    username_field = "email"
+
     def validate(self, attrs):
         data = super().validate(attrs)
 
@@ -13,6 +16,7 @@ class CustomTokenSerializer(TokenObtainPairSerializer):
             "refresh": data["refresh"],
             "user": {
                 "id": self.user.id,
+                "name": self.user.name,
                 "email": self.user.email,
                 "role": self.user.role
             }
