@@ -155,4 +155,8 @@ SIMPLE_JWT = {
 
 AUTH_USER_MODEL = "accounts.User"
 
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",
+]
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
