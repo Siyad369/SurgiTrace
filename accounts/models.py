@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 
@@ -77,6 +78,13 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["name"]
+
+    def clean(self):
+        if self.role in [Role.DOCTOR, Role.DEPARTMENT_HEAD] and not self.department:
+            raise ValidationError("Department required for this role")
+
+        if self.role in [Role.SYSTEM_ADMIN, Role.HOSPITAL_ADMIN] and self.department:
+            raise ValidationError("Admins should not have department")
 
     def __str__(self):
         return self.email

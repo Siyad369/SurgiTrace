@@ -1,4 +1,3 @@
-from django.contrib.auth import authenticate
 from django.db import transaction
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -29,42 +28,79 @@ class DepartmentSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at']
 
 class UserSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True,required=True,min_length=8, style={"input_type": "password"},)
+    password = serializers.CharField(
+        write_only=True,
+        required=False,
+        min_length=8,
+        style={"input_type": "password"}
+    )
+
+    department = serializers.PrimaryKeyRelatedField(
+        queryset=Department.objects.all(),
+        write_only=True,
+        required=False,
+        allow_null=True
+    )
+
+    department_name = serializers.CharField(
+        source="department.name",
+        read_only=True
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.instance:  # CREATE operation — no instance means POST
+            self.fields["password"].required = True
 
     class Meta:
         model = User
-        fields = ["id", "name", "email", "password", "role", "department", "created_at"]
+        fields = ["id", "name", "email", "password","role", "department", "department_name","created_at"]
         read_only_fields = ["id", "created_at"]
 
+    # PASSWORD VALIDATION
     def validate_password(self, value):
         if value.isdigit():
             raise serializers.ValidationError("Password cannot be entirely numeric.")
-        if not value.strip():  #catch whitespace-only passwords early
-            raise serializers.ValidationError("Password cannot be blank or whitespace.")
+        if not value.strip():
+            raise serializers.ValidationError("Password cannot be blank.")
         return value
 
+    # ROLE SECURITY (CRITICAL)
     def validate_role(self, value):
         request = self.context.get("request")
 
         if not request or not request.user.is_authenticated:
-            raise serializers.ValidationError("Invalid request context.")
-        #only validate role field if it's actually being changed
-        if self.instance and self.instance.role == value:
-            return value  # no-op change, allow it
+            raise serializers.ValidationError("Invalid request")
 
+        # Allow same role (no change)
+        if self.instance and self.instance.role == value:
+            return value
+
+        # Only system admin can assign/change roles
         if request.user.role != Role.SYSTEM_ADMIN:
-            raise serializers.ValidationError("Only system admin can assign roles.")
+            raise serializers.ValidationError("Only system admin can change roles")
+
         return value
 
+    # MAIN VALIDATION
     def validate(self, attrs):
         role = attrs.get("role", getattr(self.instance, "role", None))
         department = attrs.get("department", getattr(self.instance, "department", None))
 
         if role in [Role.DOCTOR, Role.DEPARTMENT_HEAD] and not department:
-            raise serializers.ValidationError({"department": "Department is required for Doctors and Department Heads."})
-        #system_admin and hospital_admin should not be tied to a department
+            raise serializers.ValidationError({"department": "Department required"})
+
         if role in [Role.SYSTEM_ADMIN, Role.HOSPITAL_ADMIN] and department:
-            raise serializers.ValidationError({"department": "This role should not be assigned a department."})
+            raise serializers.ValidationError({"department": "Admins should not have department"})
+
+        request = self.context.get("request")
+        if not request:
+            raise serializers.ValidationError("Request context is required.")
+
+        if self.instance and "department" in attrs:
+            if request.user.role not in [Role.SYSTEM_ADMIN, Role.HOSPITAL_ADMIN]:
+                raise serializers.ValidationError("Not allowed to change department")
+
         return attrs
 
     @transaction.atomic
@@ -79,8 +115,6 @@ class UserSerializer(serializers.ModelSerializer):
             setattr(instance, attr, value)
 
         if password:
-            if len(password.strip()) == 0:  #reject blank password
-                raise serializers.ValidationError({"password": "Password cannot be blank."})
             instance.set_password(password)
 
         instance.save()
