@@ -1,14 +1,11 @@
-from django.contrib.auth import authenticate
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
-from .models import User, Department
-from .permissions import UserPermission, DepartmentPermission
+from .models import User, Department, Role
+from .permissions import UserPermission, DepartmentPermission, IsAuthenticatedAndActive
 from .serializers import UserSerializer, DepartmentSerializer, CustomTokenSerializer
 
 
@@ -16,17 +13,17 @@ class LoginView(TokenObtainPairView):
     serializer_class = CustomTokenSerializer
 
 class UserView(APIView):
-    permission_classes = [IsAuthenticated, UserPermission]
+    permission_classes = [IsAuthenticatedAndActive, UserPermission]
 
     def get(self,request):
         user = request.user
 
-        if user.role == "system_admin":
-            queryset = User.objects.select_related("department").all()
-        elif user.role == "hospital_admin":
-            queryset = User.objects.select_related("department").exclude(role="system_admin")
+        if user.role == Role.SYSTEM_ADMIN:
+            queryset = User.objects.select_related("department").filter(is_active=True)
+        elif user.role == Role.HOSPITAL_ADMIN:
+            queryset = User.objects.select_related("department").filter(is_active=True).exclude(role__in=[Role.SYSTEM_ADMIN, Role.HOSPITAL_ADMIN])
         else:
-            queryset = User.objects.select_related("department").filter(id=user.id)
+            queryset = User.objects.select_related("department").filter(id=user.id, is_active=True)
         serializer = UserSerializer(queryset, many=True, context={"request": request})
         return Response(serializer.data)
 
@@ -39,7 +36,7 @@ class UserView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class UserUpdateView(APIView):
-    permission_classes = [IsAuthenticated, UserPermission]
+    permission_classes = [IsAuthenticatedAndActive, UserPermission]
 
     def get_object(self, request, pk):  # ADD THIS METHOD
         user = get_object_or_404(User.objects.select_related("department"), pk=pk)
@@ -76,7 +73,7 @@ class UserUpdateView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 class DepartmentsView(APIView):
-    permission_classes = [IsAuthenticated, DepartmentPermission]
+    permission_classes = [IsAuthenticatedAndActive, DepartmentPermission]
 
     def get(self,request):
         departments = Department.objects.all()
