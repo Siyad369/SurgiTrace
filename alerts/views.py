@@ -4,6 +4,8 @@ from rest_framework import status
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
 
+from surgeries.models import Surgery
+from videos.models import SurgeryVideo
 from .models import Alert
 from .serializers import AlertSerializer
 from .services import run_all_checks
@@ -44,3 +46,24 @@ class ResolveAlertAPIView(APIView):
 
         serializer = AlertSerializer(alert)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class MissingVideosAPIView(APIView):
+
+    def get(self, request):
+        surgeries = Surgery.objects.filter(status="completed")
+
+        data = []
+
+        for surgery in surgeries:
+            video_exists = SurgeryVideo.objects.filter(
+                surgery_id=surgery
+            ).exists()
+
+            if not video_exists:
+                data.append({
+                    "surgery_id": surgery.id,
+                    "message": "Video not recorded"
+                })
+
+        return Response(data, status=status.HTTP_200_OK)

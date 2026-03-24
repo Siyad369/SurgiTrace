@@ -28,8 +28,7 @@ def check_missing_videos():
     surgeries = Surgery.objects.filter(status="completed")
 
     for surgery in surgeries:
-        video_exists = SurgeryVideo.objects.filter(surgery=surgery).exists()
-
+        video_exists = SurgeryVideo.objects.filter(surgery_id=surgery).exists()
         if not video_exists:
             create_alert_if_not_exists(
                 surgery,
