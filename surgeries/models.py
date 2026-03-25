@@ -1,5 +1,5 @@
 from django.db import models
-from accounts.models import Department, User
+from accounts.models import Department, User, Role
 
 
 class OperatingRoom(models.Model):
@@ -30,7 +30,7 @@ class Surgery(models.Model):
 
     title = models.CharField(max_length=255)
     patient_reference = models.CharField(max_length=100)
-    doctor = models.ForeignKey(User, on_delete=models.CASCADE)
+    doctor = models.ForeignKey(User, on_delete=models.CASCADE, limit_choices_to={'role': Role.DOCTOR})
     department = models.ForeignKey(Department, on_delete=models.CASCADE)
     room = models.ForeignKey(OperatingRoom, on_delete=models.SET_NULL, null=True)
 
