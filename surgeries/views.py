@@ -1,13 +1,18 @@
 from django.shortcuts import get_object_or_404
 from django.utils.timezone import now
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+
+from audit.models import AuditAction
+from audit.services import log_action
 from .models import OperatingRoom, Surgery
 from .serializers import OperatingRoomSerializer, SurgerySerializer
 
 
 class OperatingRoomListCreateAPIView(APIView):
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         rooms = OperatingRoom.objects.select_related('department').all()
@@ -23,6 +28,7 @@ class OperatingRoomListCreateAPIView(APIView):
 
 
 class OperatingRoomDetailAPIView(APIView):
+    permission_classes = [IsAuthenticated]
 
     def get_object(self, pk):
         return get_object_or_404(OperatingRoom.objects.select_related('department'),pk=pk)
@@ -55,6 +61,7 @@ class OperatingRoomDetailAPIView(APIView):
 
 
 class SurgeryListCreateAPIView(APIView):
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         surgeries = Surgery.objects.select_related('doctor', 'department', 'room').all().order_by('-created_at')
@@ -64,12 +71,20 @@ class SurgeryListCreateAPIView(APIView):
     def post(self, request):
         serializer = SurgerySerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            surgery = serializer.save()
+            log_action(
+                user=request.user,
+                action=AuditAction.CREATE_SURGERY,
+                target_type="surgery",
+                target_id=surgery.id,
+                request=request
+            )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class SurgeryDetailAPIView(APIView):
+    permission_classes = [IsAuthenticated]
 
     def get_object(self, pk):
         return get_object_or_404(Surgery.objects.select_related('doctor', 'department', 'room'),pk=pk)
@@ -84,6 +99,13 @@ class SurgeryDetailAPIView(APIView):
         serializer = SurgerySerializer(surgery, data=request.data)
         if serializer.is_valid():
             serializer.save()
+            log_action(
+                user=request.user,
+                action=AuditAction.UPDATE_SURGERY,
+                target_type="surgery",
+                target_id=surgery.id,
+                request=request
+            )
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -92,16 +114,31 @@ class SurgeryDetailAPIView(APIView):
         serializer = SurgerySerializer(surgery, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
+            log_action(
+                user=request.user,
+                action=AuditAction.UPDATE_SURGERY,
+                target_type="surgery",
+                target_id=surgery.id,
+                request=request
+            )
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
         surgery = self.get_object(pk)
         surgery.delete()
+        log_action(
+            user=request.user,
+            action=AuditAction.DELETE_SURGERY,
+            target_type="surgery",
+            target_id=surgery.id,
+            request=request
+        )
         return Response({"message": "Surgery deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
 
 
 class UpcomingSurgeriesAPIView(APIView):
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         surgeries = Surgery.objects.select_related('doctor', 'department', 'room').filter(scheduled_start__gt=now()).order_by('scheduled_start')
@@ -115,6 +152,7 @@ class UpcomingSurgeriesAPIView(APIView):
 
 
 class CompletedSurgeriesAPIView(APIView):
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         surgeries = Surgery.objects.select_related('doctor', 'department', 'room').filter(status='completed').order_by('-actual_end')
@@ -128,6 +166,7 @@ class CompletedSurgeriesAPIView(APIView):
 
 
 class DepartmentSurgeriesAPIView(APIView):
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, department_id):
         surgeries = Surgery.objects.select_related('doctor', 'department', 'room').filter(department_id=department_id).order_by('-created_at')
