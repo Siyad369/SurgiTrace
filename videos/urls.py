@@ -7,10 +7,10 @@ from .views import (
 
 urlpatterns = [
     # 📌 GET all videos / POST upload
-    path("", SurgeryVideoAPIView.as_view()),
+    path("operation/videos/", SurgeryVideoAPIView.as_view()),
 
     # 📌 GET single video
-    path("<int:pk>/", SurgeryVideoAPIView.as_view()),
+    path("video/get_single/<int:pk>/", SurgeryVideoAPIView.as_view()),
 
     # 🎥 Stream video
     path("<int:pk>/stream/", VideoStreamAPIView.as_view()),
