@@ -14,7 +14,7 @@ from .services import run_all_checks
 class AlertListAPIView(APIView):
 
     def get(self, request):
-        run_all_checks()
+        # run_all_checks()  ❌ removed
 
         alerts = Alert.objects.all()
         serializer = AlertSerializer(alerts, many=True)

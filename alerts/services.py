@@ -7,21 +7,17 @@ from videos.models import SurgeryVideo
 
 
 def create_alert_if_not_exists(surgery, alert_type, message):
-    """
-    Prevent duplicate alerts
-    """
-    exists = Alert.objects.filter(
+    alert, created = Alert.objects.get_or_create(
         surgery=surgery,
         alert_type=alert_type,
-        status__in=[Alert.AlertStatus.ACTIVE, Alert.AlertStatus.ACKNOWLEDGED],
-    ).exists()
+        defaults={"message": message}
+    )
 
-    if not exists:
-        Alert.objects.create(
-            surgery=surgery,
-            alert_type=alert_type,
-            message=message
-        )
+    if not created and alert.status == Alert.AlertStatus.RESOLVED:
+        alert.status = Alert.AlertStatus.ACTIVE
+        alert.message = message
+        alert.resolved_at = None
+        alert.save()
 
 
 def check_missing_videos():
