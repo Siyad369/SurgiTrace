@@ -3,14 +3,14 @@ from .models import Alert
 
 
 class AlertSerializer(serializers.ModelSerializer):
-    surgery_id = serializers.IntegerField(source="surgery.id", read_only=True)
+    surgery_name = serializers.CharField(source="surgery.title", read_only=True)
 
     class Meta:
         model = Alert
         fields = [
             "id",
-            "surgery",
-            "surgery_id",
+            "surgery",        # keep this if you want ID
+            "surgery_name",   # 👈 added
             "alert_type",
             "status",
             "message",
