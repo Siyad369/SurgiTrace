@@ -9,8 +9,8 @@ class AlertSerializer(serializers.ModelSerializer):
         model = Alert
         fields = [
             "id",
-            "surgery",        # keep this if you want ID
-            "surgery_name",   # 👈 added
+            "surgery",
+            "surgery_name",
             "alert_type",
             "status",
             "message",
