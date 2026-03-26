@@ -5,8 +5,11 @@ import os
 from ultralytics import YOLO
 
 
-HF_TOKEN = os.getenv("HUGGINGFACE_TOKEN")
-yolo_model = YOLO("yolov8n.pt")
+# HF_TOKEN = os.getenv("HUGGINGFACE_TOKEN")
+
+def get_yolo_model():
+    from ultralytics import YOLO
+    return YOLO("yolov8n.pt")
 def extract_frames(video_path, output_folder="frames"):
     os.makedirs(output_folder, exist_ok=True)
 
@@ -33,7 +36,7 @@ def extract_frames(video_path, output_folder="frames"):
 def detect_events_from_frames(frames):
     events = []
     last_event_time = -20  # to avoid duplicates
-
+    yolo_model = get_yolo_model()
     for i, frame_path in enumerate(frames):
         results = yolo_model(frame_path)
 
@@ -98,12 +101,19 @@ def build_medgemma_prompt(events):
     return prompt
 
 
-from transformers import AutoTokenizer, AutoModelForCausalLM
+def get_llm():
+    from transformers import AutoTokenizer, AutoModelForCausalLM
 
-llm_model = AutoModelForCausalLM.from_pretrained("google/gemma-2b", token=HF_TOKEN)
-tokenizer = AutoTokenizer.from_pretrained("google/gemma-2b", token=HF_TOKEN)
+    HF_TOKEN = os.getenv("HUGGINGFACE_TOKEN")
+
+    tokenizer = AutoTokenizer.from_pretrained("google/gemma-2b", token=HF_TOKEN)
+    model = AutoModelForCausalLM.from_pretrained("google/gemma-2b", token=HF_TOKEN)
+
+    return tokenizer, model
+
 
 def run_medgemma_llm(prompt):
+    tokenizer, llm_model = get_llm()
     print("DEBUG: Running LLM")
 
     inputs = tokenizer(
@@ -124,6 +134,7 @@ def run_medgemma_llm(prompt):
     print("DEBUG: Response generated")
 
     return response
+
 
 def run_medgemma_analysis(video_path):
     frames = extract_frames(video_path)
