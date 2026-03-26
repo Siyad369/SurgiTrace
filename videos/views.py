@@ -1,21 +1,34 @@
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 
 from django.http import FileResponse, Http404
 
+from audit.models import AuditAction
+from audit.services import log_action
 from .models import SurgeryVideo
-from .serializers import SurgeryVideoSerializer
+from .serializer import SurgeryVideoSerializer
 
 
 # 📌 GET all videos / GET single / POST upload
 class SurgeryVideoAPIView(APIView):
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk=None):
         # 👉 Get single video
         if pk:
             try:
                 video = SurgeryVideo.objects.get(pk=pk)
+                # ✅ LOG METADATA ACCESS
+                log_action(
+                    user=request.user,
+                    action=AuditAction.VIEW_VIDEO,
+                    target_type="video",
+                    target_id=video.id,
+                    request=request
+                )
+
                 serializer = SurgeryVideoSerializer(video)
                 return Response(serializer.data)
             except SurgeryVideo.DoesNotExist:
@@ -33,7 +46,15 @@ class SurgeryVideoAPIView(APIView):
         serializer = SurgeryVideoSerializer(data=request.data)
 
         if serializer.is_valid():
-            serializer.save()
+            video = serializer.save()
+            # ✅ LOG UPLOAD
+            log_action(
+                user=request.user,
+                action=AuditAction.UPLOAD_VIDEO,
+                target_type="video",
+                target_id=video.id,
+                request=request
+            )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -41,11 +62,19 @@ class SurgeryVideoAPIView(APIView):
 
 # 🎥 Stream video
 class VideoStreamAPIView(APIView):
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         try:
             video = SurgeryVideo.objects.get(pk=pk)
-
+            # ✅ LOG BEFORE RETURNING VIDEO
+            log_action(
+                user=request.user,
+                action=AuditAction.VIEW_VIDEO,
+                target_type="video",
+                target_id=video.id,
+                request=request
+            )
             # return video file
             return FileResponse(
                 video.video_path.open('rb'),
@@ -58,13 +87,21 @@ class VideoStreamAPIView(APIView):
 
 # 🔐 Verify video integrity (hash check)
 class VideoVerifyAPIView(APIView):
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         try:
             video = SurgeryVideo.objects.get(pk=pk)
 
             current_hash = video.generate_hash()
-
+            # ✅ LOG VERIFY ACTION
+            log_action(
+                user=request.user,
+                action=AuditAction.VIEW_VIDEO,  # or create VERIFY_VIDEO action
+                target_type="video",
+                target_id=video.id,
+                request=request
+            )
             return Response({
                 "stored_hash": video.video_hash,
                 "current_hash": current_hash,
@@ -76,3 +113,21 @@ class VideoVerifyAPIView(APIView):
                 {"error": "Video not found"},
                 status=status.HTTP_404_NOT_FOUND
             )
+
+
+class VideoDownloadAPIView(APIView):
+
+    def get(self, request, pk):
+        try:
+            video = SurgeryVideo.objects.get(pk=pk)
+
+            file_path = video.video_path.path
+            file_name = os.path.basename(file_path)
+
+            response = FileResponse(open(file_path, 'rb'), as_attachment=True)
+            response['Content-Disposition'] = f'attachment; filename="{file_name}"'
+
+            return response
+
+        except SurgeryVideo.DoesNotExist:
+            return Response({"error": "Video not found"}, status=404)
