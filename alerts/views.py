@@ -16,7 +16,13 @@ class AlertListAPIView(APIView):
     def get(self, request):
         run_all_checks()
 
-        alerts = Alert.objects.all()
+        alerts = Alert.objects.filter(
+            status__in=[
+                Alert.AlertStatus.ACTIVE,
+                Alert.AlertStatus.ACKNOWLEDGED
+            ]
+        )
+
         serializer = AlertSerializer(alerts, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -63,6 +69,7 @@ class MissingVideosAPIView(APIView):
             if not video_exists:
                 data.append({
                     "surgery_id": surgery.id,
+                    "surgery_name": surgery.title,
                     "message": "Video not recorded"
                 })
 
