@@ -113,21 +113,3 @@ class VideoVerifyAPIView(APIView):
                 {"error": "Video not found"},
                 status=status.HTTP_404_NOT_FOUND
             )
-
-
-class VideoDownloadAPIView(APIView):
-
-    def get(self, request, pk):
-        try:
-            video = SurgeryVideo.objects.get(pk=pk)
-
-            file_path = video.video_path.path
-            file_name = os.path.basename(file_path)
-
-            response = FileResponse(open(file_path, 'rb'), as_attachment=True)
-            response['Content-Disposition'] = f'attachment; filename="{file_name}"'
-
-            return response
-
-        except SurgeryVideo.DoesNotExist:
-            return Response({"error": "Video not found"}, status=404)

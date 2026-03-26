@@ -5,3 +5,8 @@ __pycache__/
 *.pyc
 db.sqlite3
 .idea/
+media/*
+!media/.gitkeep
+frames/
+*.log
+.cache/

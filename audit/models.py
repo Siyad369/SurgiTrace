@@ -8,6 +8,7 @@ class AuditAction(models.TextChoices):
     LOGOUT = "logout", "Logout"
     VIEW_VIDEO = "view_video", "View Video"
     EXPORT_VIDEO = "export_video", "Export Video"
+    UPLOAD_VIDEO = "upload_video", "Upload Video"
     CREATE_SURGERY = "create_surgery", "Create Surgery"
     UPDATE_SURGERY = "update_surgery", "Update Surgery"
     DELETE_SURGERY = "delete_surgery", "Delete Surgery"
