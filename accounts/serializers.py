@@ -10,16 +10,21 @@ class CustomTokenSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         data = super().validate(attrs)
 
+        user_data = {
+            "id": self.user.id,
+            "name": self.user.name,
+            "email": self.user.email,
+            "role": self.user.role,
+        }
+
+        # Add department only if exists
+        if self.user.department:
+            user_data["department"] = self.user.department.name
+
         return {
             "access": data["access"],
             "refresh": data["refresh"],
-            "user": {
-                "id": self.user.id,
-                "name": self.user.name,
-                "email": self.user.email,
-                "role": self.user.role,
-                "department": self.user.department.name
-            }
+            "user": user_data
         }
 
 class DepartmentSerializer(serializers.ModelSerializer):
