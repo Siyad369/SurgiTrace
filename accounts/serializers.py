@@ -18,7 +18,7 @@ class CustomTokenSerializer(TokenObtainPairSerializer):
                 "name": self.user.name,
                 "email": self.user.email,
                 "role": self.user.role,
-                "department": self.user.department
+                "department": self.user.department.name
             }
         }
 
