@@ -1,6 +1,7 @@
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -13,7 +14,8 @@ class LoginView(TokenObtainPairView):
     serializer_class = CustomTokenSerializer
 
 class UserView(APIView):
-    permission_classes = [IsAuthenticatedAndActive, UserPermission]
+    # permission_classes = [IsAuthenticatedAndActive, UserPermission]
+    permission_classes = [IsAuthenticated]
 
     def get(self,request):
         user = request.user
@@ -36,7 +38,8 @@ class UserView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class UserUpdateView(APIView):
-    permission_classes = [IsAuthenticatedAndActive, UserPermission]
+    # permission_classes = [IsAuthenticatedAndActive, UserPermission]
+    permission_classes = [IsAuthenticated]
 
     def get_object(self, request, pk):  # ADD THIS METHOD
         user = get_object_or_404(User.objects.select_related("department"), pk=pk)
@@ -73,8 +76,8 @@ class UserUpdateView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 class DepartmentsView(APIView):
-    permission_classes = [IsAuthenticatedAndActive, DepartmentPermission]
-
+    # permission_classes = [IsAuthenticatedAndActive, DepartmentPermission]
+    permission_classes = [IsAuthenticated]
     def get(self,request):
         departments = Department.objects.all()
         serializer = DepartmentSerializer(departments,many=True)
