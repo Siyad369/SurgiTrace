@@ -20,7 +20,7 @@ class CustomTokenSerializer(TokenObtainPairSerializer):
         # Add department only if exists
         if self.user.department:
             user_data["department"] = self.user.department.name
-            user_data["department"] = self.user.department.id
+            user_data["department_id"] = self.user.department.id
 
         return {
             "access": data["access"],
