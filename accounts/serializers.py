@@ -1,6 +1,9 @@
 from django.db import transaction
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+from audit.models import AuditAction
+from audit.services import log_action
 from .models import User, Department, Role
 
 
@@ -8,25 +11,55 @@ class CustomTokenSerializer(TokenObtainPairSerializer):
     username_field = "email"
 
     def validate(self, attrs):
-        data = super().validate(attrs)
+        request = self.context.get("request")
 
-        user_data = {
-            "id": self.user.id,
-            "name": self.user.name,
-            "email": self.user.email,
-            "role": self.user.role,
-        }
+        try:
+            data = super().validate(attrs)
 
-        # Add department only if exists
-        if self.user.department:
-            user_data["department"] = self.user.department.name
-            user_data["department_id"] = self.user.department.id
+            # ---------------------------
+            # USER DATA RESPONSE
+            # ---------------------------
+            user_data = {
+                "id": self.user.id,
+                "name": self.user.name,
+                "email": self.user.email,
+                "role": self.user.role,
+            }
 
-        return {
-            "access": data["access"],
-            "refresh": data["refresh"],
-            "user": user_data
-        }
+            if self.user.department:
+                user_data["department"] = self.user.department.name
+                user_data["department_id"] = self.user.department.id
+
+            # ---------------------------
+            # AUDIT LOG (SUCCESS LOGIN)
+            # ---------------------------
+            log_action(
+                user=self.user,
+                action=AuditAction.LOGIN,
+                target_type="user",
+                target_id=self.user.id,
+                request=request
+            )
+
+            return {
+                "access": data["access"],
+                "refresh": data["refresh"],
+                "user": user_data
+            }
+
+        except Exception:
+            # ---------------------------
+            # AUDIT LOG (FAILED LOGIN)
+            # ---------------------------
+            log_action(
+                user=None,  # user unknown on failure
+                action=AuditAction.ACCESS_DENIED,
+                target_type="user",
+                target_id=None,
+                request=request
+            )
+
+            raise
 
 class DepartmentSerializer(serializers.ModelSerializer):
     class Meta:
