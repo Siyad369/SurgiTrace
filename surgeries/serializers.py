@@ -91,3 +91,31 @@ class SurgerySerializer(serializers.ModelSerializer):
             )
 
         return data
+
+    def create(self, validated_data):
+        actual_start = validated_data.get('actual_start')
+        actual_end = validated_data.get('actual_end')
+
+        # 🧠 Auto status logic
+        if actual_end:
+            validated_data['status'] = 'completed'
+        elif actual_start:
+            validated_data['status'] = 'in_progress'
+
+        return super().create(validated_data)
+
+    # ✅ UPDATE (auto logic + auto time)
+    def update(self, instance, validated_data):
+        status = validated_data.get('status', instance.status)
+        actual_start = validated_data.get('actual_start', instance.actual_start)
+        actual_end = validated_data.get('actual_end', instance.actual_end)
+
+        # 🟢 Start surgery
+        if validated_data.get('status') == 'in_progress' and not instance.actual_start:
+            validated_data['actual_start'] = now()
+
+        # 🔵 Complete surgery (VERY IMPORTANT FIX)
+        if actual_end is not None:
+            validated_data['status'] = 'completed'
+
+        return super().update(instance, validated_data)
