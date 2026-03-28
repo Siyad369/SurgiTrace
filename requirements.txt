@@ -18,6 +18,7 @@ filelock==3.25.2
 fonttools==4.62.1
 fsspec==2026.2.0
 gradio_client==2.4.0
+gunicorn==25.3.0
 h11==0.16.0
 hf-xet==1.4.2
 httpcore==1.0.9
@@ -67,3 +68,4 @@ tzdata==2025.3
 ultralytics==8.4.26
 ultralytics-thop==2.0.18
 urllib3==2.6.3
+whitenoise==6.12.0
