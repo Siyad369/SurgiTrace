@@ -17,7 +17,7 @@ djangorestframework_simplejwt==5.5.1
 filelock==3.25.2
 fonttools==4.62.1
 fsspec==2026.2.0
-gradio_client==0.16.4
+gradio_client==2.4.0
 gunicorn==25.3.0
 h11==0.16.0
 hf-xet==1.4.2
