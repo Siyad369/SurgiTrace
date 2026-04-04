@@ -98,7 +98,7 @@ class GetAnalysisAPIView(APIView):
                 {
                     "event_type": e.event_type,
                     "timestamp": e.timestamp,
-                    "confidence": e.confidence
+                    "confidence": e.confidence or 0.00
                 }
                 for e in events
             ]

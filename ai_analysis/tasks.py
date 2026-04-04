@@ -24,7 +24,7 @@ def run_ai_analysis(analysis_id, video_url):
                 analysis=analysis,
                 event_type=event.get("event_type"),
                 timestamp=event.get("timestamp"),
-                confidence=event.get("confidence"),
+                confidence=event.get("confidence") or 0.00,
             )
 
     except Exception as e:
