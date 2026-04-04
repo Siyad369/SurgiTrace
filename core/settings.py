@@ -177,3 +177,17 @@ SIMPLE_JWT = {
 AUTH_USER_MODEL = "accounts.User"
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
+
+# CLOUDINARY_STORAGE = {
+#     "CLOUD_NAME": "dfjwl5wno",
+#     "API_KEY": "999219843266819",
+#     "API_SECRET": "eLO0RhGf9B94OjPIhAQMfX8nufU",
+# }
+
+DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
