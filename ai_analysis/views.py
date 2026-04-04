@@ -86,8 +86,8 @@ class RunAnalysisAPIView(APIView):
 
 class GetAnalysisAPIView(APIView):
 
-    def get(self, request, analysis_id):
-        analysis = AIAnalysis.objects.get(id=analysis_id)
+    def get(self, request, video_id):
+        analysis = AIAnalysis.objects.get(id=video_id)
 
         events = VideoEvent.objects.filter(analysis=analysis)
 
