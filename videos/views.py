@@ -1,5 +1,6 @@
 import os
 
+from django.utils.dateparse import parse_datetime
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -45,11 +46,37 @@ class SurgeryVideoAPIView(APIView):
         return Response(serializer.data)
 
     def post(self, request):
-        serializer = SurgeryVideoSerializer(data=request.data)
 
-        if serializer.is_valid():
-            video = serializer.save()
-            # ✅ LOG UPLOAD
+        data = request.data
+
+        # 🔥 BASIC VALIDATION
+        required_fields = [
+            "surgery_id",
+            "video_url",
+            "recording_start",
+            "recording_end",
+            "duration"
+        ]
+
+        for field in required_fields:
+            if field not in data:
+                return Response(
+                    {"error": f"{field} is required"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        try:
+            # 🔥 CREATE VIDEO OBJECT
+            video = SurgeryVideo.objects.create(
+                surgery_id_id=data.get("surgery_id"),
+                video_url=data.get("video_url"),
+                recording_start=parse_datetime(data.get("recording_start")),
+                recording_end=parse_datetime(data.get("recording_end")),
+                duration=data.get("duration"),
+                storage_type="CLOUD"
+            )
+
+            # ✅ AUDIT LOG
             log_action(
                 user=request.user,
                 action=AuditAction.UPLOAD_VIDEO,
@@ -57,9 +84,17 @@ class SurgeryVideoAPIView(APIView):
                 target_id=video.id,
                 request=request
             )
+
+            # 🔥 SERIALIZE RESPONSE
+            serializer = SurgeryVideoSerializer(video)
+
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 # 🎥 Stream video

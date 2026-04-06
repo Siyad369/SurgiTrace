@@ -24,8 +24,8 @@ class SurgeryVideo(models.Model):
         related_name="videos"
     )
 
-    video_path = models.FileField(upload_to=video_upload_path, storage=MediaCloudinaryStorage())
-
+    # video_path = models.FileField(upload_to=video_upload_path, storage=MediaCloudinaryStorage())
+    video_url = models.URLField(max_length=1000, blank=True, null=True)
     video_hash = models.CharField(max_length=256, blank=True)
 
     recording_start = models.DateTimeField()

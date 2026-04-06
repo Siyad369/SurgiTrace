@@ -68,7 +68,7 @@ class RunAnalysisAPIView(APIView):
         # create analysis
         analysis = AIAnalysis.objects.create(video=video)
 
-        video_url = request.build_absolute_uri(video.video_path.url)
+        video_url = video.video_url
 
         # 🔥 START BACKGROUND THREAD
         thread = threading.Thread(

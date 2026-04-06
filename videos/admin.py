@@ -24,7 +24,7 @@ class SurgeryVideoAdmin(admin.ModelAdmin):
     readonly_fields = (
         "video_hash",
         "created_at",
-        "video_path",
+        "video_url",
         "recording_start",
         "recording_end",
         "duration",
