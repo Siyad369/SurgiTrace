@@ -1,6 +1,7 @@
 import hashlib
 import uuid
 
+from cloudinary_storage.storage import MediaCloudinaryStorage
 from django.db import models
 
 
@@ -23,7 +24,7 @@ class SurgeryVideo(models.Model):
         related_name="videos"
     )
 
-    video_path = models.FileField(upload_to=video_upload_path)
+    video_path = models.FileField(upload_to=video_upload_path, storage=MediaCloudinaryStorage())
 
     video_hash = models.CharField(max_length=256, blank=True)
 
