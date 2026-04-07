@@ -41,12 +41,12 @@ class SurgeryVideo(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     # 🔐 Generate SHA256 hash
-    def generate_hash(self):
-        sha256 = hashlib.sha256()
-        with self.video_url.open('rb') as f:
-            for chunk in iter(lambda: f.read(4096), b""):
-                sha256.update(chunk)
-        return sha256.hexdigest()
+    # def generate_hash(self):
+    #     sha256 = hashlib.sha256()
+    #     with self.video_url.open('rb') as f:
+    #         for chunk in iter(lambda: f.read(4096), b""):
+    #             sha256.update(chunk)
+    #     return sha256.hexdigest()
 
     # 🔒 Make model immutable (WORM behavior)
     def save(self, *args, **kwargs):
@@ -71,9 +71,9 @@ class SurgeryVideo(models.Model):
         super().save(*args, **kwargs)
 
         # ✅ Generate hash only once after file save
-        if not self.video_hash:
-            self.video_hash = self.generate_hash()
-            super().save(update_fields=["video_hash"])
+        # if not self.video_hash:
+        #     self.video_hash = self.generate_hash()
+        #     super().save(update_fields=["video_hash"])
 
     # ❌ Prevent delete (WORM)
     def delete(self, *args, **kwargs):
