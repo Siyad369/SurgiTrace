@@ -2,7 +2,7 @@ from django.urls import path
 from .views import (
     SurgeryVideoAPIView,
     VideoStreamAPIView,
-    VideoVerifyAPIView, VideoDownloadAPIView
+    VideoVerifyAPIView
 )
 
 urlpatterns = [
@@ -18,5 +18,5 @@ urlpatterns = [
     # 🔐 Verify hash
     path("<int:pk>/verify/", VideoVerifyAPIView.as_view()),
 
-    path("<int:pk>/download/", VideoDownloadAPIView.as_view()),
+    # path("<int:pk>/download/", VideoDownloadAPIView.as_view()),
 ]
