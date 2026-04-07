@@ -43,7 +43,7 @@ class SurgeryVideo(models.Model):
     # 🔐 Generate SHA256 hash
     def generate_hash(self):
         sha256 = hashlib.sha256()
-        with self.video_path.open('rb') as f:
+        with self.video_url.open('rb') as f:
             for chunk in iter(lambda: f.read(4096), b""):
                 sha256.update(chunk)
         return sha256.hexdigest()
@@ -55,7 +55,7 @@ class SurgeryVideo(models.Model):
             old = SurgeryVideo.objects.get(pk=self.pk)
 
             # ❌ Prevent video file change
-            if old.video_path != self.video_path:
+            if old.video_path != self.video_url:
                 raise ValueError("Video file cannot be modified (WORM enforced)")
 
             # ❌ Prevent metadata change
